@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fast Lead — AI Call Assistant & Lead Manager</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-light: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --green: #10b981;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --blue: #3b82f6;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 80px;
+    }
+    header {
+      background: #020617;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+      color: #38bdf8;
+    }
+    header span {
+      font-size: 12px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #e2e8f0;
+    }
+    .active-num-pill {
+      background: #020617;
+      border: 1px solid #38bdf8;
+      color: #bae6fd;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    /* ON / OFF Switch */
+    .status-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .status-badge {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .status-on { background: rgba(16, 185, 129, 0.18); color: var(--green); border: 1px solid var(--green); }
+    .status-off { background: rgba(239, 68, 68, 0.18); color: var(--red); border: 1px solid var(--red); }
+    .toggle-btn {
+      padding: 11px 16px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      color: #fff;
+    }
+    .btn-green { background: var(--green); }
+    .btn-red { background: var(--red); }
+    .btn-blue { background: var(--blue); }
+
+    .off-options {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      display: none;
+    }
+    .off-options.active { display: block; }
+    .hour-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .hour-btn {
+      background: var(--card-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 6px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .hour-btn.selected {
+      background: var(--amber);
+      color: #000;
+      border-color: var(--amber);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      background: var(--card);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Form Controls */
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      margin-top: 10px;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    .preset-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .chip {
+      background: var(--card-light);
+      border: 1px solid var(--border);
+      color: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .save-feedback {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #34d399;
+      min-height: 18px;
+      font-weight: 600;
+    }
+
+    /* Call Simulator */
+    .call-screen {
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .call-banner {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--amber);
+      color: #fde68a;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .chat-log {
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 4px;
+    }
+    .msg {
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: 88%;
+    }
+    .msg-ai { background: #1e293b; color: #f8fafc; align-self: flex-start; border: 1px solid #334155; }
+    .msg-user { background: #2563eb; color: #fff; align-self: flex-end; }
+    .msg-sys { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; align-self: center; font-size: 12px; text-align: center; }
+    .press-9-box {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .press-9-box.active { display: block; }
+    .btn-9 {
+      width: 100%;
+      padding: 14px;
+      background: var(--green);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* Leads List */
+    .lead-item {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .lead-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .tag-real { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-spam { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .tag-closed { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .wa-btn {
+      display: inline-block;
+      margin-top: 8px;
+      background: #16a34a;
+      color: #fff;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Fast Lead</h1>
+  <span>gemini-3.1-flash-lite</span>
+</header>
+
+<div class="container">
+
+  <!-- ACTIVE BUSINESS NUMBER + ON / OFF AVAILABILITY CARD -->
+  <div class="card">
+    <div class="active-num-pill">
+      <span>📱 बिज़नेस नंबर: <strong id="activeBusinessPhoneDisplay">—</strong></span>
+      <span style="font-size:11px; color:#94a3b8;">(9 दबाने पर इसी पर कॉल जाएगी)</span>
+    </div>
+
+    <h2>1. लाइव उपलब्धता (ON / OFF कंट्रोल)</h2>
+    <div class="status-box">
+      <div id="statusBadge" class="status-badge status-on">🟢 ON — खुला है / उपलब्ध</div>
+      <button id="toggleStatusBtn" class="toggle-btn btn-red" onclick="toggleAvailability()">OFF करें</button>
+    </div>
+
+    <div id="offOptions" class="off-options">
+      <div style="font-size:13px; color:#fbbf24; font-weight:600;">कितने घंटे के लिए बंद कर रहे हैं? (चुनें):</div>
+      <div class="hour-grid">
+        <button class="hour-btn" onclick="setClosedDuration('1 घंटा', this)">1 घंटा</button>
+        <button class="hour-btn selected" onclick="setClosedDuration('2 घंटे', this)">2 घंटे</button>
+        <button class="hour-btn" onclick="setClosedDuration('3 घंटे', this)">3 घंटे</button>
+        <button class="hour-btn" onclick="setClosedDuration('4 घंटे', this)">4 घंटे</button>
+        <button class="hour-btn" onclick="setClosedDuration('आज के लिए बंद', this)">आज के लिए बंद</button>
+        <button class="hour-btn" onclick="saveClosedStatus()" style="background:#10b981; color:#000;">✔ सेव करें</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('callTab', this)">📞 कॉल असिस्टेंट</button>
+    <button class="tab-btn" onclick="switchTab('leadsTab', this)">📋 Leads (<span id="leadCount">0</span>)</button>
+    <button class="tab-btn" onclick="switchTab('setupTab', this)">⚙️ नंबर व प्रॉम्प्ट</button>
+  </div>
+
+  <!-- TAB 1: LIVE CALL ASSISTANT TESTER -->
+  <div id="callTab" class="tab-panel active">
+    <div class="card">
+      <h2>2. AI कॉल असिस्टेंट (रिंगटोन + छँटनी + Press 9)</h2>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <input id="callerPhone" type="tel" placeholder="कॉलर नंबर (जैसे 9876543210)" value="9876543210" />
+        <button class="toggle-btn btn-green" style="white-space:nowrap;" onclick="startIncomingCall()">📞 कॉल शुरू करें</button>
+      </div>
+
+      <div class="call-screen">
+        <div id="callBanner" class="call-banner">
+          कॉल शुरू करने के लिए ऊपर "कॉल शुरू करें" दबाएं।
+        </div>
+        <div id="chatLog" class="chat-log"></div>
+
+        <div id="press9Box" class="press-9-box">
+          <button id="press9Btn" class="btn-9" onclick="pressNineConnect()">9️⃣ — 9 दबाएं (बिज़नेस नंबर पर कॉल कनेक्ट करें)</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input id="callerSpeechInput" type="text" placeholder="कॉलर की बात लिखें (जैसे: फीस कितनी है / लोन ऑफर है)..." onkeypress="if(event.key==='Enter') sendCallerSpeech()" />
+          <button class="toggle-btn btn-blue" onclick="sendCallerSpeech()">बोलें</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: LEADS LIST -->
+  <div id="leadsTab" class="tab-panel">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 style="margin:0;">सेव हुई Leads और छँटनी लॉग</h2>
+        <button class="chip" onclick="clearLeads()">साफ़ करें</button>
+      </div>
+      <div id="leadsContainer"></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: BUSINESS NUMBER, UNIVERSAL PROMPT & BYOK SETTINGS -->
+  <div id="setupTab" class="tab-panel">
+    <div class="card">
+      <h2>बिज़नेस नंबर सेव करें</h2>
+      <label>जिस नंबर पर यह बिज़नेस चलेगा / कॉल कनेक्ट होगी:</label>
+      <div style="display:flex; gap:8px;">
+        <input id="businessPhoneInput" type="tel" placeholder="10 अंकों का बिज़नेस नंबर डालें (जैसे 9811122233)" />
+        <button class="toggle-btn btn-green" style="white-space:nowrap;" onclick="saveBusinessNumberOnly()">💾 नंबर सेव करें</button>
+      </div>
+      <div id="phoneSaveMsg" class="save-feedback"></div>
+    </div>
+
+    <div class="card">
+      <h2>Universal Business Prompt + Customer BYOK Key</h2>
+
+      <label>रेडीमेड मोड चुनें (1 टैप में प्रॉम्प्ट बदलें):</label>
+      <div class="preset-row">
+        <button class="chip" onclick="applyPreset('clinic')">🏥 डॉक्टर / क्लिनिक</button>
+        <button class="chip" onclick="applyPreset('shop')">🏪 दुकान / स्टोर</button>
+        <button class="chip" onclick="applyPreset('personal')">🛡️ आम जनता (फ़्रॉड छँटनी)</button>
+      </div>
+
+      <label>मालिक / बिज़नेस का नाम:</label>
+      <input id="ownerName" type="text" value="तरुण भाई साहब" />
+
+      <label>मालिक का WhatsApp अलर्ट नंबर (91 के साथ):</label>
+      <input id="ownerWhatsapp" type="tel" value="919876543210" />
+
+      <label>Universal Business Prompt (नियम, रेट, टाइमिंग):</label>
+      <textarea id="masterPrompt">हमारा क्लिनिक सुबह 10 से रात 8 बजे तक खुलता है। कंसल्टेशन फीस 300 रुपये है।
+नियम:
+1. पहले पूछें कि क्या काम है।
+2. अगर लोन, क्रेडिट कार्ड, OTP, लॉटरी या विज्ञापन का कॉल हो तो विनम्रता से मना करके कॉल कट कर दें।
+3. अगर असली मरीज़ या काम का कॉल हो तो जानकारी दें और बात करने के लिए 9 दबाने को कहें।</textarea>
+
+      <label>Customer AI Brain API Key (BYOK — Gemini AIza... या Groq gsk_...):</label>
+      <input id="byokApiKey" type="password" placeholder="AIza... (gemini-3.1-flash-lite) या gsk_..." />
+      <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Gemini Key देने पर मॉडल: <strong>gemini-3.1-flash-lite</strong></div>
+
+      <button class="toggle-btn btn-blue" style="width:100%; margin-top:14px;" onclick="saveSettings()">💾 पूरी सेटिंग्स सेव करें</button>
+      <div id="settingsSaveMsg" class="save-feedback"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const GEMINI_MODEL = "gemini-3.1-flash-lite";
+  const STORAGE_KEY = "fast_lead_state_v3";
+
+  let appState = {
+    isOpen: true,
+    closedDuration: "2 घंटे",
+    businessPhone: "9811122233",
+    ownerName: "तरुण भाई साहब",
+    ownerWhatsapp: "919876543210",
+    masterPrompt: "",
+    byokApiKey: "",
+    leads: []
+  };
+
+  let activeCall = {
+    active: false,
+    phone: "",
+    reason: "",
+    canPress9: false
+  };
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        appState = { ...appState, ...JSON.parse(saved) };
+      } else {
+        appState.masterPrompt = document.getElementById("masterPrompt").value;
+      }
+    } catch (e) {
+      console.error("Storage error", e);
+    }
+    document.getElementById("businessPhoneInput").value = appState.businessPhone || "";
+    document.getElementById("ownerName").value = appState.ownerName;
+    document.getElementById("ownerWhatsapp").value = appState.ownerWhatsapp;
+    if (appState.masterPrompt) document.getElementById("masterPrompt").value = appState.masterPrompt;
+    document.getElementById("byokApiKey").value = appState.byokApiKey || "";
+    renderBusinessPhoneDisplay();
+    renderStatusUI();
+    renderLeads();
+  }
+
+  function persistState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    } catch (e) {}
+  }
+
+  function renderBusinessPhoneDisplay() {
+    const num = appState.businessPhone || "सेट नहीं है";
+    document.getElementById("activeBusinessPhoneDisplay").textContent = num;
+    const btn9 = document.getElementById("press9Btn");
+    if (btn9) {
+      btn9.textContent = `9️⃣ — 9 दबाएं (${num} नंबर पर कॉल कनेक्ट करें)`;
+    }
+  }
+
+  function saveBusinessNumberOnly() {
+    const rawNum = document.getElementById("businessPhoneInput").value.trim();
+    const cleaned = rawNum.replace(/[^0-9+]/g, "");
+    const msgEl = document.getElementById("phoneSaveMsg");
+    if (!cleaned || cleaned.length < 7) {
+      msgEl.style.color = "#f87171";
+      msgEl.textContent = "कृपया सही फ़ोन नंबर डालें।";
+      return;
+    }
+    appState.businessPhone = cleaned;
+    persistState();
+    renderBusinessPhoneDisplay();
+    msgEl.style.color = "#34d399";
+    msgEl.textContent = `✔ बिज़नेस नंबर (${cleaned}) सेव हो गया! अब सिस्टम इसी नंबर पर सेट है।`;
+  }
+
+  // --- ON / OFF AVAILABILITY ---
+  function toggleAvailability() {
+    if (appState.isOpen) {
+      appState.isOpen = false;
+      document.getElementById("offOptions").classList.add("active");
+    } else {
+      appState.isOpen = true;
+      document.getElementById("offOptions").classList.remove("active");
+    }
+    persistState();
+    renderStatusUI();
+  }
+
+  function setClosedDuration(dur, btn) {
+    appState.closedDuration = dur;
+    document.querySelectorAll(".hour-btn").forEach(b => b.classList.remove("selected"));
+    if (btn) btn.classList.add("selected");
+    persistState();
+    renderStatusUI();
+  }
+
+  function saveClosedStatus() {
+    document.getElementById("offOptions").classList.remove("active");
+    persistState();
+    renderStatusUI();
+    alert("सेव हो गया: अभी " + appState.closedDuration + " के लिए बंद है।");
+  }
+
+  function renderStatusUI() {
+    const badge = document.getElementById("statusBadge");
+    const btn = document.getElementById("toggleStatusBtn");
+    if (appState.isOpen) {
+      badge.className = "status-badge status-on";
+      badge.textContent = "🟢 ON — खुला है / उपलब्ध";
+      btn.className = "toggle-btn btn-red";
+      btn.textContent = "OFF करें";
+    } else {
+      badge.className = "status-badge status-off";
+      badge.textContent = `🔴 OFF — बंद है (${appState.closedDuration})`;
+      btn.className = "toggle-btn btn-green";
+      btn.textContent = "ON करें";
+    }
+  }
+
+  // --- TABS & PRESETS ---
+  function switchTab(tabId, btn) {
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(tabId).classList.add("active");
+    btn.classList.add("active");
+  }
+
+  function applyPreset(type) {
+    const promptBox = document.getElementById("masterPrompt");
+    if (type === "clinic") {
+      promptBox.value = "हमारा क्लिनिक सुबह 10 से रात 8 बजे तक खुलता है। फीस 300 रुपये है। असली मरीज़ का नाम व तकलीफ पूछें और बात करने के लिए 9 दबाने को कहें। फ़्रॉड या विज्ञापन कॉल काट दें।";
+    } else if (type === "shop") {
+      promptBox.value = "हमारी दुकान सुबह 10 से रात 9 बजे तक खुली रहती है। सभी सामान उचित रेट पर उपलब्ध हैं। ग्राहक का नाम और सामान पूछें और बात करने के लिए 9 दबाने को कहें।";
+    } else {
+      promptBox.value = "यह पर्सनल कॉल छँटनी असिस्टेंट है। पहले पूछें कि कौन बोल रहा है और किस काम से कॉल किया है। लोन, क्रेडिट कार्ड, बीमा, OTP या प्रचार कॉल को तुरंत मना करके काट दें। डिलीवरी, परिवार या ज़रूरी काम होने पर 9 दबाने को कहें।";
+    }
+  }
+
+  function saveSettings() {
+    const rawNum = document.getElementById("businessPhoneInput").value.trim();
+    if (rawNum) {
+      appState.businessPhone = rawNum.replace(/[^0-9+]/g, "");
+    }
+    appState.ownerName = document.getElementById("ownerName").value.trim() || "तरुण भाई साहब";
+    appState.ownerWhatsapp = document.getElementById("ownerWhatsapp").value.trim() || "919876543210";
+    appState.masterPrompt = document.getElementById("masterPrompt").value.trim();
+    appState.byokApiKey = document.getElementById("byokApiKey").value.trim();
+    persistState();
+    renderBusinessPhoneDisplay();
+    const msgEl = document.getElementById("settingsSaveMsg");
+    msgEl.style.color = "#34d399";
+    msgEl.textContent = "✅ बिज़नेस नंबर, प्रॉम्प्ट और BYOK Key सुरक्षित सेव हो गई!";
+  }
+
+  // --- SOFT RINGTONE BEEP ---
+  function playSoftRingtone() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(480, ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 1.1);
+    } catch (e) {}
+  }
+
+  // --- CALL ASSISTANT FLOW ---
+  function appendMsg(text, type) {
+    const log = document.getElementById("chatLog");
+    const div = document.createElement("div");
+    div.className = "msg " + (type === "ai" ? "msg-ai" : type === "user" ? "msg-user" : "msg-sys");
+    div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function startIncomingCall() {
+    const phone = document.getElementById("callerPhone").value.trim() || "अज्ञात नंबर";
+    activeCall = { active: true, phone, reason: "", canPress9: false };
+    document.getElementById("chatLog").innerHTML = "";
+    document.getElementById("press9Box").classList.remove("active");
+
+    playSoftRingtone();
+    const banner = document.getElementById("callBanner");
+    banner.textContent = "🔔 रिंगटोन: कृपया थोड़ा समय लगेगा कॉल उठाने में, कृपया थोड़ा धैर्य रखें...";
+    appendMsg("🔔 कृपया थोड़ा समय लगेगा कॉल उठाने में, कृपया थोड़ा धैर्य रखें...", "sys");
+
+    setTimeout(() => {
+      if (!activeCall.active) return;
+      banner.textContent = `🟢 कॉल कनेक्टेड (${phone}) → बिज़नेस नंबर: ${appState.businessPhone}`;
+      let greeting = `नमस्ते! मैं ${appState.ownerName} का AI असिस्टेंट बोल रहा हूँ। आप कौन बोल रहे हैं और किस काम से कॉल किया है?`;
+      if (!appState.isOpen) {
+        greeting = `नमस्ते! अभी ${appState.closedDuration} के लिए बंद है। आप कौन बोल रहे हैं और क्या काम है? मैं आपकी डिटेल नोट कर लेता हूँ।`;
+      }
+      appendMsg(greeting, "ai");
+    }, 1400);
+  }
+
+  async function sendCallerSpeech() {
+    const input = document.getElementById("callerSpeechInput");
+    const text = input.value.trim();
+    if (!text) return;
+    if (!activeCall.active) {
+      alert("पहले ऊपर 'कॉल शुरू करें' बटन दबाएं।");
+      return;
+    }
+    input.value = "";
+    appendMsg(text, "user");
+    activeCall.reason = activeCall.reason ? activeCall.reason + " | " + text : text;
+
+    const decision = await analyzeWithBrainOrFallback(text);
+
+    if (decision.type === "spam") {
+      appendMsg(decision.reply, "ai");
+      appendMsg("🚫 फ़्रॉड / विज्ञापन कॉल पहचान कर कट कर दी गई।", "sys");
+      saveLeadRecord(activeCall.phone, activeCall.reason, "फ़्रॉड/Ad कट", "spam");
+      activeCall.active = false;
+      document.getElementById("callBanner").textContent = "🔴 कॉल कट कर दी गई (फ़्रॉड / Ad फ़िल्टर)";
+      return;
+    }
+
+    appendMsg(decision.reply, "ai");
+    if (appState.isOpen) {
+      activeCall.canPress9 = true;
+      document.getElementById("press9Box").classList.add("active");
+    } else {
+      saveLeadRecord(activeCall.phone, activeCall.reason, `बंद समय (${appState.closedDuration}) लीड सेव`, "closed");
+      appendMsg(`✅ बंद समय की लीड सेव हो गई (${appState.closedDuration})।`, "sys");
+    }
+  }
+
+  function buildSystemInstruction() {
+    return `${appState.masterPrompt}
+बिज़नेस नंबर: ${appState.businessPhone}
+उपलब्धता स्थिति: ${appState.isOpen ? "अभी खुला है" : "अभी " + appState.closedDuration + " के लिए बंद है"}
+नियम:
+1. 2 छोटी हिंदी लाइनों में सीधा जवाब दें।
+2. अगर कॉल फ़्रॉड, OTP, लोन, क्रेडिट कार्ड, लॉटरी या विज्ञापन/ऑफर का है तो पहली लाइन में SPAM लिखें और अगली लाइन में विनम्रता से मना करें।
+3. अगर कॉल असली काम या ग्राहक का है तो पहली लाइन में REAL लिखें और अगली लाइन में ${appState.isOpen ? appState.ownerName + " से बात करने के लिए 9 दबाने को कहें" : "बताएं कि अभी " + appState.closedDuration + " के लिए बंद है और डिटेल नोट कर ली गई है"}।`;
+  }
+
+  function parseModelDecision(rawText) {
+    const cleanRaw = (rawText || "").trim();
+    const isSpam = cleanRaw.toUpperCase().startsWith("SPAM");
+    const reply = cleanRaw.replace(/^(SPAM|REAL)[:\-\s]*/i, "").trim();
+    return { type: isSpam ? "spam" : "real", reply };
+  }
+
+  async function analyzeWithBrainOrFallback(userText) {
+    const key = (appState.byokApiKey || "").trim();
+    const sysPrompt = buildSystemInstruction();
+
+    // 1. Gemini BYOK (gemini-3.1-flash-lite)
+    if (key.startsWith("AIza")) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sysPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userText }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 140 }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (textOut) return parseModelDecision(textOut);
+        }
+      } catch (err) {
+        console.warn("Gemini flash-lite fallback triggered:", err);
+      }
+    }
+
+    // 2. Groq BYOK (optional fallback if gsk_ key entered)
+    if (key.startsWith("gsk_")) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + key
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: sysPrompt },
+              { role: "user", content: userText }
+            ],
+            temperature: 0.2,
+            max_tokens: 120
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const textOut = data?.choices?.[0]?.message?.content || "";
+          if (textOut) return parseModelDecision(textOut);
+        }
+      } catch (err) {
+        console.warn("Groq fallback triggered:", err);
+      }
+    }
+
+    // 3. Safe Smart Fallback (zero crash even without API key)
+    const lower = userText.toLowerCase();
+    const spamKeywords = ["loan", "लोन", "credit card", "क्रेडिट कार्ड", "otp", "ओटीपी", "lottery", "लॉटरी", "offer", "ऑफर", "insurance", "बीमा", "फ्री गिफ्ट", "scheme", "स्कीम", "प्रचार"];
+    const isSpamLocal = spamKeywords.some(k => lower.includes(k));
+
+    if (isSpamLocal) {
+      return {
+        type: "spam",
+        reply: "धन्यवाद, हमें इस ऑफर या प्रमोशन की कोई आवश्यकता नहीं है। नमस्ते।"
+      };
+    }
+
+    if (!appState.isOpen) {
+      return {
+        type: "real",
+        reply: `जी समझ गया। अभी ${appState.closedDuration} के लिए बंद है, ${appState.closedDuration} बाद खुल जाएगा। आपकी जानकारी और नंबर नोट कर लिया गया है, खुलते ही संपर्क किया जाएगा।`
+      };
+    }
+
+    return {
+      type: "real",
+      reply: `जी बिल्कुल, यह ज़रूरी काम की कॉल है। ${appState.ownerName} से सीधे बात करने के लिए कृपया 9 दबाएं।`
+    };
+  }
+
+  function pressNineConnect() {
+    if (!activeCall.canPress9) return;
+    document.getElementById("press9Box").classList.remove("active");
+    const targetNum = appState.businessPhone || "बिज़नेस नंबर";
+    appendMsg(`9️⃣ कॉलर ने 9 दबाया — अब कॉल सीधे बिज़नेस नंबर (${targetNum}) पर कनेक्ट हो रही है!`, "sys");
+    document.getElementById("callBanner").textContent = `📲 लाइव ट्रांसफ़र: ${targetNum} पर कॉल चालू है`;
+    saveLeadRecord(activeCall.phone, activeCall.reason || "असली कॉल (9 दबाकर कनेक्ट)", `9 दबाकर → ${targetNum}`, "real");
+    activeCall.active = false;
+  }
+
+  function saveLeadRecord(phone, reason, statusLabel, category) {
+    const now = new Date().toLocaleTimeString("hi-IN", { hour: "2-digit", minute: "2-digit" });
+    appState.leads.unshift({
+      id: Date.now(),
+      phone,
+      businessPhone: appState.businessPhone,
+      reason,
+      statusLabel,
+      category,
+      time: now
+    });
+    persistState();
+    renderLeads();
+  }
+
+  function renderLeads() {
+    const container = document.getElementById("leadsContainer");
+    document.getElementById("leadCount").textContent = appState.leads.length;
+    if (!appState.leads.length) {
+      container.innerHTML = `<div style="color:#94a3b8; font-size:13px; text-align:center; padding:20px;">अभी तक कोई कॉल या लीड दर्ज नहीं हुई है।</div>`;
+      return;
+    }
+    container.innerHTML = appState.leads.map(item => {
+      const tagClass = item.category === "spam" ? "tag-spam" : item.category === "closed" ? "tag-closed" : "tag-real";
+      const waMsg = encodeURIComponent(`Fast Lead अलर्ट:\nबिज़नेस नंबर: ${item.businessPhone || appState.businessPhone}\nकॉलर नंबर: ${item.phone}\nकाम: ${item.reason}\nस्थिति: ${item.statusLabel}\nसमय: ${item.time}`);
+      return `
+        <div class="lead-item">
+          <div class="lead-top">
+            <strong>📞 ${item.phone}</strong>
+            <span class="tag ${tagClass}">${item.statusLabel}</span>
+          </div>
+          <div style="font-size:13px; color:#cbd5e1; margin-bottom:4px;">काम/बात: ${item.reason}</div>
+          <div style="font-size:11px; color:#94a3b8;">बिज़नेस नंबर: ${item.businessPhone || appState.businessPhone} | समय: ${item.time}</div>
+          <a class="wa-btn" href="https://wa.me/${appState.ownerWhatsapp}?text=${waMsg}" target="_blank">📲 मालिक को WhatsApp अलर्ट भेजें</a>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function clearLeads() {
+    if (!confirm("क्या सभी लीड्स साफ़ करनी हैं?")) return;
+    appState.leads = [];
+    persistState();
+    renderLeads();
+  }
+
+  loadState();
+</script>
+
+</body>
+</html>
